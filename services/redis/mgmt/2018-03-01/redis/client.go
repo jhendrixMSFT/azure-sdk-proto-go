@@ -34,25 +34,32 @@ const (
 // Client is the base client for Redis.
 type Client struct {
 	p pipeline.Pipeline
-	u url.URL
+	u *url.URL
 	s string
 }
 
 func (c Client) Operations() IOperations {
-	return operationsClient{c: c}
+	return operationsClient{c: &c}
 }
 
 func (c Client) Redis() IRedis {
-	return client{c: c}
+	return client{c: &c}
 }
 
 // NewClient creates an instance of the BaseClient client.
 func NewClient(subscriptionID string, p pipeline.Pipeline) Client {
+	if p == nil {
+		panic("pipeline cannot be nil")
+	}
 	u, err := url.Parse(DefaultBaseURI)
 	if err != nil {
 		panic(err)
 	}
-	return NewClientWithURI(*u, subscriptionID, p)
+	return Client{
+		p: p,
+		u: u,
+		s: subscriptionID,
+	}
 }
 
 // NewClientWithURI creates an instance of the BaseClient client.
@@ -62,7 +69,7 @@ func NewClientWithURI(u url.URL, subscriptionID string, p pipeline.Pipeline) Cli
 	}
 	return Client{
 		p: p,
-		u: u,
+		u: &u,
 		s: subscriptionID,
 	}
 }

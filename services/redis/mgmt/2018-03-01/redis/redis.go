@@ -33,7 +33,7 @@ type IRedis interface {
 
 // Client is the REST API for Azure Redis Cache Service.
 type client struct {
-	c Client
+	c *Client
 }
 
 // CheckNameAvailability checks that the redis cache name is valid and is not already in use.
@@ -64,7 +64,7 @@ func (c client) checkNameAvailabilityPreparer(ctx context.Context, parameters Ch
 	if err != nil {
 		return pipeline.Request{}, pipeline.NewError(err, "failed to marshal 'parameters'")
 	}
-	u := c.c.u
+	u := *c.c.u
 	u.Path = runtime.ReplacePathParams("/subscriptions/{subscriptionId}/providers/Microsoft.Cache/CheckNameAvailability", map[string]string{
 		"subscriptionId": c.c.s,
 	})
@@ -202,7 +202,7 @@ func (c client) Get(ctx context.Context, resourceGroupName string, name string) 
 
 // GetPreparer prepares the Get request.
 func (c client) getPreparer(ctx context.Context, resourceGroupName string, name string) (pipeline.Request, error) {
-	u := c.c.u
+	u := *c.c.u
 	u.Path = runtime.ReplacePathParams("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Cache/Redis/{name}", map[string]string{
 		"name":              name,
 		"resourceGroupName": resourceGroupName,
