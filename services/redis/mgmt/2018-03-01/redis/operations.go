@@ -20,28 +20,19 @@ package redis
 import (
 	"context"
 	"net/http"
-	"net/url"
-
-	"github.com/Azure/azure-pipeline-go/pipeline"
 )
 
+type IOperations interface {
+	List(ctx context.Context) (*OperationListResultPage, error)
+}
+
 // OperationsClient is the REST API for Azure Redis Cache Service.
-type OperationsClient struct {
-	BaseClient
-}
-
-// NewOperationsClient creates an instance of the OperationsClient client.
-func NewOperationsClient(subscriptionID string, p pipeline.Pipeline) OperationsClient {
-	return OperationsClient{NewBaseClient(subscriptionID, p)}
-}
-
-// NewOperationsClientWithBaseURI creates an instance of the OperationsClient client.
-func NewOperationsClientWithBaseURI(u url.URL, subscriptionID string, p pipeline.Pipeline) OperationsClient {
-	return OperationsClient{NewBaseClientWithURI(u, subscriptionID, p)}
+type operationsClient struct {
+	c Client
 }
 
 // List lists all of the available REST API operations of the Microsoft.Cache provider.
-func (client OperationsClient) List(ctx context.Context) (result OperationListResultPage, err error) {
+func (c operationsClient) List(ctx context.Context) (result *OperationListResultPage, err error) {
 	/*result.fn = client.listNextResults
 	req, err := client.ListPreparer(ctx)
 	if err != nil {
@@ -65,7 +56,7 @@ func (client OperationsClient) List(ctx context.Context) (result OperationListRe
 }
 
 // ListPreparer prepares the List request.
-func (client OperationsClient) listPreparer(ctx context.Context) (*http.Request, error) {
+func (c operationsClient) listPreparer(ctx context.Context) (*http.Request, error) {
 	/*const APIVersion = "2018-03-01"
 	queryParameters := map[string]interface{}{
 		"api-version": APIVersion,
@@ -82,7 +73,7 @@ func (client OperationsClient) listPreparer(ctx context.Context) (*http.Request,
 
 // ListResponder handles the response to the List request. The method always
 // closes the http.Response Body.
-func (client OperationsClient) listResponder(resp *http.Response) (result OperationListResult, err error) {
+func (c operationsClient) listResponder(resp *http.Response) (result OperationListResult, err error) {
 	/*err = autorest.Respond(
 		resp,
 		client.ByInspecting(),
@@ -94,7 +85,7 @@ func (client OperationsClient) listResponder(resp *http.Response) (result Operat
 }
 
 // listNextResults retrieves the next set of results, if any.
-func (client OperationsClient) listNextResults(lastResults OperationListResult) (result OperationListResult, err error) {
+func (c operationsClient) listNextResults(lastResults OperationListResult) (result OperationListResult, err error) {
 	/*req, err := lastResults.operationListResultPreparer()
 	if err != nil {
 		return result, autorest.NewErrorWithError(err, "redis.OperationsClient", "listNextResults", nil, "Failure preparing next results request")
@@ -115,7 +106,7 @@ func (client OperationsClient) listNextResults(lastResults OperationListResult) 
 }
 
 // ListComplete enumerates all values, automatically crossing page boundaries as required.
-func (client OperationsClient) ListComplete(ctx context.Context) (result OperationListResultIterator, err error) {
+func (c operationsClient) ListComplete(ctx context.Context) (result OperationListResultIterator, err error) {
 	//result.page, err = client.List(ctx)
 	return
 }

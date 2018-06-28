@@ -20,7 +20,6 @@ package redis
 import (
 	"context"
 	"net/http"
-	"net/url"
 
 	"github.com/Azure/azure-pipeline-go/pipeline"
 	"github.com/jhendrixMSFT/azure-sdk-proto-go/internal/runtime"
@@ -33,36 +32,26 @@ type IRedis interface {
 }
 
 // Client is the REST API for Azure Redis Cache Service.
-type Client struct {
-	BaseClient
-}
-
-// NewClient creates an instance of the Client client.
-func NewClient(subscriptionID string, p pipeline.Pipeline) Client {
-	return Client{NewBaseClient(subscriptionID, p)}
-}
-
-// NewClientWithURI creates an instance of the Client client.
-func NewClientWithURI(u url.URL, subscriptionID string, p pipeline.Pipeline) Client {
-	return Client{NewBaseClientWithURI(u, subscriptionID, p)}
+type client struct {
+	c Client
 }
 
 // CheckNameAvailability checks that the redis cache name is valid and is not already in use.
 // Parameters:
 // parameters - parameters supplied to the CheckNameAvailability Redis operation. The only supported resource
 // type is 'Microsoft.Cache/redis'
-func (client Client) CheckNameAvailability(ctx context.Context, parameters CheckNameAvailabilityParameters) (*CheckNameAvailabilityResponse, error) {
+func (c client) CheckNameAvailability(ctx context.Context, parameters CheckNameAvailabilityParameters) (*CheckNameAvailabilityResponse, error) {
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: parameters,
 			Constraints: []validation.Constraint{{Target: "parameters.Name", Name: validation.Null, Rule: true, Chain: nil},
 				{Target: "parameters.Type", Name: validation.Null, Rule: true, Chain: nil}}}}); err != nil {
 		return nil, validation.NewError("redis.Client", "CheckNameAvailability", err.Error())
 	}
-	req, err := client.checkNameAvailabilityPreparer(ctx, parameters)
+	req, err := c.checkNameAvailabilityPreparer(ctx, parameters)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := client.p.Do(ctx, runtime.NewResponderPolicyFactory(client.checkNameAvailabilityResponder), req)
+	resp, err := c.c.p.Do(ctx, runtime.NewResponderPolicyFactory(c.checkNameAvailabilityResponder), req)
 	if err != nil {
 		return nil, err
 	}
@@ -70,14 +59,14 @@ func (client Client) CheckNameAvailability(ctx context.Context, parameters Check
 }
 
 // CheckNameAvailabilityPreparer prepares the CheckNameAvailability request.
-func (client Client) checkNameAvailabilityPreparer(ctx context.Context, parameters CheckNameAvailabilityParameters) (pipeline.Request, error) {
+func (c client) checkNameAvailabilityPreparer(ctx context.Context, parameters CheckNameAvailabilityParameters) (pipeline.Request, error) {
 	b, err := runtime.ToJSON(parameters)
 	if err != nil {
 		return pipeline.Request{}, pipeline.NewError(err, "failed to marshal 'parameters'")
 	}
-	u := client.u
+	u := c.c.u
 	u.Path = runtime.ReplacePathParams("/subscriptions/{subscriptionId}/providers/Microsoft.Cache/CheckNameAvailability", map[string]string{
-		"subscriptionId": client.s,
+		"subscriptionId": c.c.s,
 	})
 	req, err := pipeline.NewRequest(http.MethodPost, u, b)
 	if err != nil {
@@ -93,7 +82,7 @@ func (client Client) checkNameAvailabilityPreparer(ctx context.Context, paramete
 
 // CheckNameAvailabilityResponder handles the response to the CheckNameAvailability request. The method always
 // closes the http.Response Body.
-func (client Client) checkNameAvailabilityResponder(resp pipeline.Response) (pipeline.Response, error) {
+func (c client) checkNameAvailabilityResponder(resp pipeline.Response) (pipeline.Response, error) {
 	err := runtime.ValidateResponse(resp, http.StatusOK)
 	if resp == nil {
 		return nil, err
@@ -106,7 +95,7 @@ func (client Client) checkNameAvailabilityResponder(resp pipeline.Response) (pip
 // resourceGroupName - the name of the resource group.
 // name - the name of the Redis cache.
 // parameters - parameters supplied to the Create Redis operation.
-/*func (client Client) Create(ctx context.Context, resourceGroupName string, name string, parameters CreateParameters) (result CreateFuture, err error) {
+/*func (c client) Create(ctx context.Context, resourceGroupName string, name string, parameters CreateParameters) (result CreateFuture, err error) {
 	if err := validation.Validate([]validation.Validation{
 		{TargetValue: parameters,
 			Constraints: []validation.Constraint{{Target: "parameters.CreateProperties", Name: validation.Null, Rule: true,
@@ -137,7 +126,7 @@ func (client Client) checkNameAvailabilityResponder(resp pipeline.Response) (pip
 }
 
 // CreatePreparer prepares the Create request.
-func (client Client) createPreparer(ctx context.Context, resourceGroupName string, name string, parameters CreateParameters) (*http.Request, error) {
+func (c client) createPreparer(ctx context.Context, resourceGroupName string, name string, parameters CreateParameters) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"name":              autorest.Encode("path", name),
 		"resourceGroupName": autorest.Encode("path", resourceGroupName),
@@ -162,7 +151,7 @@ func (client Client) createPreparer(ctx context.Context, resourceGroupName strin
 
 // CreateSender sends the Create request. The method will close the
 // http.Response Body if it receives an error.
-func (client Client) createSender(req *http.Request) (future CreateFuture, err error) {
+func (c client) createSender(req *http.Request) (future CreateFuture, err error) {
 	var resp *http.Response
 	resp, err = autorest.SendWithSender(client, req,
 		azure.DoRetryWithRegistration(client.Client))
@@ -179,7 +168,7 @@ func (client Client) createSender(req *http.Request) (future CreateFuture, err e
 
 // CreateResponder handles the response to the Create request. The method always
 // closes the http.Response Body.
-func (client Client) createResponder(resp pipeline.Response) (*ResourceType, error) {
+func (c client) createResponder(resp pipeline.Response) (*ResourceType, error) {
 	/*err = autorest.Respond(
 		resp,
 		client.ByInspecting(),
@@ -199,12 +188,12 @@ func (client Client) createResponder(resp pipeline.Response) (*ResourceType, err
 // Parameters:
 // resourceGroupName - the name of the resource group.
 // name - the name of the Redis cache.
-func (client Client) Get(ctx context.Context, resourceGroupName string, name string) (*ResourceType, error) {
-	req, err := client.getPreparer(ctx, resourceGroupName, name)
+func (c client) Get(ctx context.Context, resourceGroupName string, name string) (*ResourceType, error) {
+	req, err := c.getPreparer(ctx, resourceGroupName, name)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := client.p.Do(ctx, runtime.NewResponderPolicyFactory(client.getResponder), req)
+	resp, err := c.c.p.Do(ctx, runtime.NewResponderPolicyFactory(c.getResponder), req)
 	if err != nil {
 		return nil, err
 	}
@@ -212,12 +201,12 @@ func (client Client) Get(ctx context.Context, resourceGroupName string, name str
 }
 
 // GetPreparer prepares the Get request.
-func (client Client) getPreparer(ctx context.Context, resourceGroupName string, name string) (pipeline.Request, error) {
-	u := client.u
+func (c client) getPreparer(ctx context.Context, resourceGroupName string, name string) (pipeline.Request, error) {
+	u := c.c.u
 	u.Path = runtime.ReplacePathParams("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Cache/Redis/{name}", map[string]string{
 		"name":              name,
 		"resourceGroupName": resourceGroupName,
-		"subscriptionId":    client.s,
+		"subscriptionId":    c.c.s,
 	})
 	req, err := pipeline.NewRequest(http.MethodGet, u, nil)
 	if err != nil {
@@ -232,7 +221,7 @@ func (client Client) getPreparer(ctx context.Context, resourceGroupName string, 
 
 // GetResponder handles the response to the Get request. The method always
 // closes the http.Response Body.
-func (client Client) getResponder(resp pipeline.Response) (pipeline.Response, error) {
+func (c client) getResponder(resp pipeline.Response) (pipeline.Response, error) {
 	err := runtime.ValidateResponse(resp, http.StatusOK)
 	if resp == nil {
 		return nil, err

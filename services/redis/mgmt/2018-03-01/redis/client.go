@@ -31,28 +31,36 @@ const (
 	DefaultBaseURI = "https://management.azure.com"
 )
 
-// BaseClient is the base client for Redis.
-type BaseClient struct {
+// Client is the base client for Redis.
+type Client struct {
 	p pipeline.Pipeline
 	u url.URL
 	s string
 }
 
-// NewBaseClient creates an instance of the BaseClient client.
-func NewBaseClient(subscriptionID string, p pipeline.Pipeline) BaseClient {
+func (c Client) Operations() IOperations {
+	return operationsClient{c: c}
+}
+
+func (c Client) Redis() IRedis {
+	return client{c: c}
+}
+
+// NewClient creates an instance of the BaseClient client.
+func NewClient(subscriptionID string, p pipeline.Pipeline) Client {
 	u, err := url.Parse(DefaultBaseURI)
 	if err != nil {
 		panic(err)
 	}
-	return NewBaseClientWithURI(*u, subscriptionID, p)
+	return NewClientWithURI(*u, subscriptionID, p)
 }
 
-// NewBaseClientWithURI creates an instance of the BaseClient client.
-func NewBaseClientWithURI(u url.URL, subscriptionID string, p pipeline.Pipeline) BaseClient {
+// NewClientWithURI creates an instance of the BaseClient client.
+func NewClientWithURI(u url.URL, subscriptionID string, p pipeline.Pipeline) Client {
 	if p == nil {
 		panic("pipeline cannot be nil")
 	}
-	return BaseClient{
+	return Client{
 		p: p,
 		u: u,
 		s: subscriptionID,
