@@ -1,6 +1,6 @@
 package redis
 
-import "prototype/version"
+import "github.com/jhendrixMSFT/azure-sdk-proto-go/version"
 
 // Copyright (c) Microsoft and contributors.  All rights reserved.
 //

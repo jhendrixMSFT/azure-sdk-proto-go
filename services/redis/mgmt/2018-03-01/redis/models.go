@@ -5,7 +5,6 @@ import (
 
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/mgutz/to"
 )
 
 // Copyright (c) Microsoft and contributors.  All rights reserved.
@@ -197,13 +196,13 @@ func (olr OperationListResult) IsEmpty() bool {
 // operationListResultPreparer prepares a request to retrieve the next set of results.
 // It returns nil if no more results exist.
 func (olr OperationListResult) operationListResultPreparer() (*http.Request, error) {
-	if olr.NextLink == nil || len(to.String(olr.NextLink)) < 1 {
+	if olr.NextLink == nil || len(*olr.NextLink) < 1 {
 		return nil, nil
 	}
 	return autorest.Prepare(&http.Request{},
 		autorest.AsJSON(),
 		autorest.AsGet(),
-		autorest.WithBaseURL(to.String(olr.NextLink)))
+		autorest.WithBaseURL(*olr.NextLink))
 }
 
 // OperationListResultPage contains a page of Operation values.
