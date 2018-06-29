@@ -1,4 +1,11 @@
-package internal
+package policy
+
+import (
+	"context"
+	"net/http"
+
+	"github.com/Azure/azure-pipeline-go/pipeline"
+)
 
 // Copyright (c) Microsoft and contributors.  All rights reserved.
 //
@@ -14,9 +21,21 @@ package internal
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// AuthSettings contains user-specified configuration data for authorization.
-type AuthSettings struct {
-	APIVersion string
-	Endpoint   string
-	TenantID   string
+type CtxKeyReqHeaders struct{}
+
+func NewReqHeadersFactory() pipeline.Factory {
+	return pipeline.FactoryFunc(func(next pipeline.Policy, po *pipeline.PolicyOptions) pipeline.PolicyFunc {
+		return func(ctx context.Context, req pipeline.Request) (pipeline.Response, error) {
+			headers := ctx.Value(CtxKeyReqHeaders{})
+			if headers != nil {
+				httpHeader := headers.(http.Header)
+				for k, vs := range httpHeader {
+					for _, v := range vs {
+						req.Header.Add(k, v)
+					}
+				}
+			}
+			return next.Do(ctx, req)
+		}
+	})
 }

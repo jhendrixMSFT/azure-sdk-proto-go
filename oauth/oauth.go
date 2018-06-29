@@ -15,40 +15,55 @@ package oauth
 // limitations under the License.
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 
+	"github.com/Azure/azure-pipeline-go/pipeline"
 	"github.com/jhendrixMSFT/azure-sdk-proto-go/oauth/internal"
 )
 
+// Authority is an authorization URL endpoint.
+type Authority string
+
 const (
 	// V2Endpoint is the URL for OAuth 2.0 authorization.
-	V2Endpoint       = "https://login.microsoftonline.com/"
+	V2Endpoint       = Authority("https://login.microsoftonline.com/")
 	endpointTemplate = "%s/oauth2/%s?api-version=%s"
 )
 
-// A Authorizor is an OAuth authorization endpoint.
-type Authorizor interface {
-	Endpoint() *url.URL
+// AuthenticationContext is used to retrieve authentication tokens from AAD and ADFS.
+type AuthenticationContext interface {
+	AcquireTokenFromClientCredentials(ctx context.Context, clientID, secret, resource string) (Token, error)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-type tokenAuthorizor struct {
+type authCtx struct {
 	u *url.URL
+	p pipeline.Pipeline
 }
 
-func (ta tokenAuthorizor) Endpoint() *url.URL {
-	return ta.u
+func (ta authCtx) AcquireTokenFromClientCredentials(ctx context.Context, resource, clientID, secret string) (Token, error) {
+	c := clientCredentials{
+		ep:  ta.u,
+		cid: clientID,
+		sec: secret,
+		res: resource,
+	}
+	return c.acquire(ctx, ta.p)
 }
 
-// NewTokenAuthorizor creates an authorizor that uses the token endpoint.
-func NewTokenAuthorizor(endpointURL string, options ...Option) (Authorizor, error) {
-	u, err := url.Parse(endpointURL)
+// NewAuthenticationContext creates a context using the specified authority, pipeline, and options.
+func NewAuthenticationContext(authority Authority, p pipeline.Pipeline, options ...AuthOption) (AuthenticationContext, error) {
+	if p == nil {
+		panic("p can't be nil")
+	}
+	u, err := url.Parse(string(authority))
 	if err != nil {
 		return nil, err
 	}
-	settings := &internal.Settings{}
+	settings := &internal.AuthSettings{}
 	for _, option := range options {
 		option.Apply(settings)
 	}
@@ -56,38 +71,53 @@ func NewTokenAuthorizor(endpointURL string, options ...Option) (Authorizor, erro
 	if settings.APIVersion == "" {
 		settings.APIVersion = "1.0"
 	}
-	u, err = u.Parse(fmt.Sprintf(endpointTemplate, settings.TenantID, "token", settings.APIVersion))
+	// if no endpoint was specified default to token
+	if settings.Endpoint == "" {
+		settings.Endpoint = "token"
+	}
+	u, err = u.Parse(fmt.Sprintf(endpointTemplate, settings.TenantID, settings.Endpoint, settings.APIVersion))
 	if err != nil {
 		return nil, err
 	}
-	return tokenAuthorizor{u: u}, nil
+	return authCtx{u: u, p: p}, nil
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-// A Option is an option for configuring an authorizor.
-type Option interface {
-	Apply(*internal.Settings)
+// A AuthOption is an option for configuring an authentication context.
+type AuthOption interface {
+	Apply(*internal.AuthSettings)
 }
 
 // WithAPIVersion returns an OAuthOption that specifies an OAuth API version.
-func WithAPIVersion(apiVer string) Option {
+func WithAPIVersion(apiVer string) AuthOption {
 	return withAPIVersion(apiVer)
 }
 
 type withAPIVersion string
 
-func (w withAPIVersion) Apply(s *internal.Settings) {
+func (w withAPIVersion) Apply(s *internal.AuthSettings) {
 	s.APIVersion = string(w)
 }
 
+// WithEndpoint returns an OAuthOption that specifies the authorization endpoint.
+func WithEndpoint(endpoint string) AuthOption {
+	return withEndpoint(endpoint)
+}
+
+type withEndpoint string
+
+func (w withEndpoint) Apply(s *internal.AuthSettings) {
+	s.Endpoint = string(w)
+}
+
 // WithTenantID returns an OAuthOption that specifies a tenant ID.
-func WithTenantID(tenantID string) Option {
+func WithTenantID(tenantID string) AuthOption {
 	return withTenantID(tenantID)
 }
 
 type withTenantID string
 
-func (w withTenantID) Apply(s *internal.Settings) {
+func (w withTenantID) Apply(s *internal.AuthSettings) {
 	s.TenantID = string(w)
 }

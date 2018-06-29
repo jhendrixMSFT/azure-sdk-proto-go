@@ -1,4 +1,4 @@
-package internal
+package oauth
 
 // Copyright (c) Microsoft and contributors.  All rights reserved.
 //
@@ -14,9 +14,16 @@ package internal
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// AuthSettings contains user-specified configuration data for authorization.
-type AuthSettings struct {
-	APIVersion string
-	Endpoint   string
-	TenantID   string
+import (
+	"github.com/Azure/azure-pipeline-go/pipeline"
+	"github.com/jhendrixMSFT/azure-sdk-proto-go/policy"
+)
+
+// NewDefaultPipeline creates a request/response pipeline used when obtaining access tokens.
+func NewDefaultPipeline() pipeline.Pipeline {
+	f := []pipeline.Factory{
+		policy.NewSimpleRetryPolicyFactory(policy.SimpleRetryPolicyConfig{}),
+		pipeline.MethodFactoryMarker(),
+	}
+	return pipeline.NewPipeline(f, pipeline.Options{HTTPSender: policy.NewHTTPSenderWithCookiesFactory()})
 }
