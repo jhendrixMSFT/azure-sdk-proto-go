@@ -34,7 +34,7 @@ const (
 
 // AuthenticationContext is used to retrieve authentication tokens from AAD and ADFS.
 type AuthenticationContext interface {
-	AcquireTokenFromClientCredentials(ctx context.Context, clientID, secret, resource string) (Token, error)
+	AcquireTokenFromClientCredentials(ctx context.Context, resource, clientID, secret string) (Token, error)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
