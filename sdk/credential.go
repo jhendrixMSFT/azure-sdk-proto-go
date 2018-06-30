@@ -16,6 +16,7 @@ package sdk
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Azure/azure-pipeline-go/pipeline"
 	"github.com/jhendrixMSFT/adal-proto-go/adal"
@@ -28,16 +29,16 @@ type Credential interface {
 }
 
 func NewTokenCredential(t adal.Token) Credential {
-	return &tokenCredential{t: t}
+	return &tokenCredential{t}
 }
 
 type tokenCredential struct {
-	t adal.Token
+	adal.Token
 }
 
 func (tc tokenCredential) New(next pipeline.Policy, o *pipeline.PolicyOptions) pipeline.Policy {
 	return pipeline.PolicyFunc(func(ctx context.Context, req pipeline.Request) (pipeline.Response, error) {
-		req.Header.Add("Authorization", tc.t.AuthorizationHeader())
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tc.Value()))
 		return next.Do(ctx, req)
 	})
 }
