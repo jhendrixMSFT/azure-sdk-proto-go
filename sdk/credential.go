@@ -1,6 +1,4 @@
-package policy
-
-import "github.com/Azure/azure-pipeline-go/pipeline"
+package sdk
 
 // Copyright (c) Microsoft and contributors.  All rights reserved.
 //
@@ -16,8 +14,32 @@ import "github.com/Azure/azure-pipeline-go/pipeline"
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import (
+	"context"
+
+	"github.com/Azure/azure-pipeline-go/pipeline"
+	"github.com/jhendrixMSFT/adal-proto-go/adal"
+)
+
 // Credential represent any credential type; it is used to create a credential policy Factory.
 type Credential interface {
 	pipeline.Factory
 	credentialMarker()
 }
+
+func NewTokenCredential(t adal.Token) Credential {
+	return &tokenCredential{t: t}
+}
+
+type tokenCredential struct {
+	t adal.Token
+}
+
+func (tc tokenCredential) New(next pipeline.Policy, o *pipeline.PolicyOptions) pipeline.Policy {
+	return pipeline.PolicyFunc(func(ctx context.Context, req pipeline.Request) (pipeline.Response, error) {
+		req.Header.Add("Authorization", tc.t.AuthorizationHeader())
+		return next.Do(ctx, req)
+	})
+}
+
+func (tokenCredential) credentialMarker() {}

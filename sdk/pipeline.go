@@ -1,6 +1,4 @@
-package policy
-
-import "github.com/Azure/azure-pipeline-go/pipeline"
+package sdk
 
 // Copyright (c) Microsoft and contributors.  All rights reserved.
 //
@@ -16,16 +14,21 @@ import "github.com/Azure/azure-pipeline-go/pipeline"
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import (
+	"github.com/Azure/azure-pipeline-go/pipeline"
+	"github.com/jhendrixMSFT/policy-proto-go/policy"
+)
+
 func NewDefaultPipeline(c Credential) pipeline.Pipeline {
-	/*if c == nil {
+	if c == nil {
 		panic("c can't be nil")
-	}*/
+	}
 	f := []pipeline.Factory{
-		NewUserAgentPolicyFactory(),
-		NewResourceProviderRegistrar(),
-		NewSimpleRetryPolicyFactory(SimpleRetryPolicyConfig{}),
-		//c,
+		policy.NewUserAgentPolicyFactory(),
+		policy.NewResourceProviderRegistrar(),
+		policy.NewSimpleRetryPolicyFactory(policy.SimpleRetryPolicyConfig{}),
+		c,
 		pipeline.MethodFactoryMarker(),
 	}
-	return pipeline.NewPipeline(f, pipeline.Options{HTTPSender: NewHTTPSenderWithCookiesFactory()})
+	return pipeline.NewPipeline(f, pipeline.Options{HTTPSender: policy.NewHTTPSenderWithCookiesFactory()})
 }
