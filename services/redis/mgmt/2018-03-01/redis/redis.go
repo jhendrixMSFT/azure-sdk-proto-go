@@ -33,7 +33,7 @@ type IRedis interface {
 
 // Client is the REST API for Azure Redis Cache Service.
 type client struct {
-	c *Client
+	*Client
 }
 
 // CheckNameAvailability checks that the redis cache name is valid and is not already in use.
@@ -51,7 +51,7 @@ func (c client) CheckNameAvailability(ctx context.Context, parameters CheckNameA
 	if err != nil {
 		return nil, err
 	}
-	resp, err := c.c.p.Do(ctx, runtime.NewResponderPolicyFactory(c.checkNameAvailabilityResponder), req)
+	resp, err := c.p.Do(ctx, runtime.NewResponderPolicyFactory(c.checkNameAvailabilityResponder), req)
 	if err != nil {
 		return nil, err
 	}
@@ -64,9 +64,9 @@ func (c client) checkNameAvailabilityPreparer(ctx context.Context, parameters Ch
 	if err != nil {
 		return pipeline.Request{}, pipeline.NewError(err, "failed to marshal 'parameters'")
 	}
-	u := *c.c.u
+	u := *c.u
 	u.Path = runtime.ReplacePathParams("/subscriptions/{subscriptionId}/providers/Microsoft.Cache/CheckNameAvailability", map[string]string{
-		"subscriptionId": c.c.s,
+		"subscriptionId": c.s,
 	})
 	req, err := pipeline.NewRequest(http.MethodPost, u, b)
 	if err != nil {
@@ -193,7 +193,7 @@ func (c client) Get(ctx context.Context, resourceGroupName string, name string) 
 	if err != nil {
 		return nil, err
 	}
-	resp, err := c.c.p.Do(ctx, runtime.NewResponderPolicyFactory(c.getResponder), req)
+	resp, err := c.p.Do(ctx, runtime.NewResponderPolicyFactory(c.getResponder), req)
 	if err != nil {
 		return nil, err
 	}
@@ -202,11 +202,11 @@ func (c client) Get(ctx context.Context, resourceGroupName string, name string) 
 
 // GetPreparer prepares the Get request.
 func (c client) getPreparer(ctx context.Context, resourceGroupName string, name string) (pipeline.Request, error) {
-	u := *c.c.u
+	u := *c.u
 	u.Path = runtime.ReplacePathParams("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Cache/Redis/{name}", map[string]string{
 		"name":              name,
 		"resourceGroupName": resourceGroupName,
-		"subscriptionId":    c.c.s,
+		"subscriptionId":    c.s,
 	})
 	req, err := pipeline.NewRequest(http.MethodGet, u, nil)
 	if err != nil {

@@ -28,7 +28,7 @@ type IOperations interface {
 
 // OperationsClient is the REST API for Azure Redis Cache Service.
 type operationsClient struct {
-	c *Client
+	*Client
 }
 
 // List lists all of the available REST API operations of the Microsoft.Cache provider.

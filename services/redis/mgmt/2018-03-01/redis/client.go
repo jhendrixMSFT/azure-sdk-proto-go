@@ -39,14 +39,14 @@ type Client struct {
 }
 
 func (c Client) Operations() IOperations {
-	return operationsClient{c: &c}
+	return operationsClient{&c}
 }
 
 func (c Client) Redis() IRedis {
-	return client{c: &c}
+	return client{&c}
 }
 
-// NewClient creates an instance of the BaseClient client.
+// NewClient creates an instance of the Client client.
 func NewClient(subscriptionID string, p pipeline.Pipeline) Client {
 	if p == nil {
 		panic("pipeline cannot be nil")
@@ -62,7 +62,7 @@ func NewClient(subscriptionID string, p pipeline.Pipeline) Client {
 	}
 }
 
-// NewClientWithURI creates an instance of the BaseClient client.
+// NewClientWithURI creates an instance of the Client client.
 func NewClientWithURI(u url.URL, subscriptionID string, p pipeline.Pipeline) Client {
 	if p == nil {
 		panic("pipeline cannot be nil")
